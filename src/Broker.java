@@ -1,16 +1,18 @@
-public class Broker {
+ class Broker implements Runnable{
     public static void main(String[] args) {
         
-        Thread t1 = new Thread(new Bolsa());
-
-		
-		System.out.println(t1.toString()); 
-
-		
-		System.out.println(t1.getState());
+        Thread t1 = new Thread(new Broker());
 
 		t1.start();
 
-		System.out.println(t1.getState());
+		
     }
+
+	@Override
+	public void run() {
+		System.out.println(Thread.currentThread().getState());
+
+		System.out.println("Programa em execucao...");
+        
+	}
 }
