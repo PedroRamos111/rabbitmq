@@ -17,7 +17,11 @@ public class Bolsa {
         Thread threadRecv = new Thread(new Runnable() {
             public void run() {
 
-                System.out.println("Executando a primeira função");
+                try {
+                    recebePedido();
+                } catch (IOException | TimeoutException e) {
+                    e.printStackTrace();
+                }
             }
         });
         Thread threadSend = new Thread(new Runnable() {
@@ -28,7 +32,7 @@ public class Bolsa {
         });
 
         threadRecv.start();
-        threadSend.start();
+        // threadSend.start();
     }
 
     public static void recebePedido() throws IOException, TimeoutException {
@@ -52,9 +56,9 @@ public class Bolsa {
             System.exit(1);
         }
 
-        for (String bindingKey : listTopics) {
-            channel.queueBind(queueName, EXCHANGE_NAME, bindingKey);
-        }
+        
+            channel.queueBind(queueName, EXCHANGE_NAME, "compra.#");
+        
 
         System.out.println(" [*] Waiting for messages. To exit press CTRL+C");
 
@@ -62,14 +66,15 @@ public class Bolsa {
 
             String message = new String(delivery.getBody(), "UTF-8");
             String routingKey = delivery.getEnvelope().getRoutingKey();
-            String[] topicos = routingKey.split(".");
+            //[] topicos = routingKey.split(".");
 
             System.out.println(" [x] Received '" + delivery.getEnvelope().getRoutingKey() + "':'" + message + "'");
-
+            System.out.println(routingKey);
+            System.out.println(message);
             Thread threadLivro = new Thread(new Runnable() {
                 public void run() {
 
-                    registraLivro(topicos[0] + ";" + topicos[1] + ";" + message);
+                    //registraLivro(topicos[0] + ";" + topicos[1] + ";" + message);
                 }
             });
             threadLivro.start();
