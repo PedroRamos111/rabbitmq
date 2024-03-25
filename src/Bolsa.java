@@ -4,13 +4,20 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DeliverCallback;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.StringTokenizer;
 import java.util.concurrent.TimeoutException;
 
 public class Bolsa {
 
     private static final String EXCHANGE_NAME = "topic_logs";
+    private static final String arqLivro = "POO_Livro.csv";
 
     public static void main(String[] args) {
 
@@ -56,9 +63,8 @@ public class Bolsa {
             System.exit(1);
         }
 
-        
-            channel.queueBind(queueName, EXCHANGE_NAME, "compra.#");
-        
+        channel.queueBind(queueName, EXCHANGE_NAME, "compra.#");
+        channel.queueBind(queueName, EXCHANGE_NAME, "venda.#");
 
         System.out.println(" [*] Waiting for messages. To exit press CTRL+C");
 
@@ -66,7 +72,6 @@ public class Bolsa {
 
             String message = new String(delivery.getBody(), "UTF-8");
             String routingKey = delivery.getEnvelope().getRoutingKey();
-            //[] topicos = routingKey.split(".");
 
             System.out.println(" [x] Received '" + delivery.getEnvelope().getRoutingKey() + "':'" + message + "'");
             System.out.println(routingKey);
@@ -74,7 +79,7 @@ public class Bolsa {
             Thread threadLivro = new Thread(new Runnable() {
                 public void run() {
 
-                    //registraLivro(topicos[0] + ";" + topicos[1] + ";" + message);
+                    registraLivro(routingKey, message);
                 }
             });
             threadLivro.start();
@@ -84,7 +89,40 @@ public class Bolsa {
         });
     }
 
-    public static void registraLivro(String identificadorM) {
+    public static void registraLivro(String key, String msg) {
 
+
+        try {
+            FileWriter arquivo = new FileWriter(arqLivro, false);
+                try {
+                    arquivo.write(key + ";" + msg + "\n");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                };
+            arquivo.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(arqLivro));
+            String linha;
+
+            while ((linha = reader.readLine()) != null) {
+                StringTokenizer str = new StringTokenizer(linha, ";");
+                String palavra = str.nextToken();
+                String significado = str.nextToken();
+                //dicionario.put(palavra, significado);
+            }
+            reader.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    //HashMap<String, String>
+    public void getDadosLivro(){
+        
     }
 }
