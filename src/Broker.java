@@ -17,8 +17,9 @@ class Broker implements Runnable{
 
 		t1.start();
 		try {
-			compra("ABEV3", 10, 10);
-			venda("ABEV3", 6, 8);
+			venda("BRK1","ABEV3", 10, 10);
+			compra("BRK2","ABEV3", 10, 5);
+			
 		} catch (IOException | TimeoutException e) {
 			e.printStackTrace();
 		}
@@ -35,14 +36,14 @@ class Broker implements Runnable{
         
 	}
 
-	public static void compra(String corretora, int quant, double val) throws IOException, TimeoutException {
-		String topic = "compra."+corretora;
+	public static void compra(String corretora, String ativo, int quant, double val) throws IOException, TimeoutException {
+		String topic = "compra."+ativo;
 		String message = corretora + ";" + quant + ";" + val;
 		enviaPedido(topic, message);
 	}
 	
-	public static void venda(String corretora, int quant, double val) throws IOException, TimeoutException {
-		String topic = "venda."+corretora;
+	public static void venda(String corretora, String ativo, int quant, double val) throws IOException, TimeoutException {
+		String topic = "venda."+ativo;
 		String message = corretora + ";" + quant + ";" + val;
 		enviaPedido(topic, message);
 	}
