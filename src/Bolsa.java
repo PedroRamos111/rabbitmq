@@ -10,7 +10,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
+import java.util.*;
 import java.util.StringTokenizer;
 import java.util.concurrent.TimeoutException;
 
@@ -18,6 +18,7 @@ public class Bolsa {
 
     private static final String EXCHANGE_NAME = "topic_logs";
     private static final String arqLivro = "POO_Livro.csv";
+    private static List<String> dadosList = new ArrayList<String>();
 
     public static void main(String[] args) {
 
@@ -79,6 +80,7 @@ public class Bolsa {
             Thread threadLivro = new Thread(new Runnable() {
                 public void run() {
 
+                    checkMatch(message, routingKey);
                     registraLivro(routingKey, message);
                 }
             });
@@ -91,38 +93,96 @@ public class Bolsa {
 
     public static void registraLivro(String key, String msg) {
 
-
         try {
             FileWriter arquivo = new FileWriter(arqLivro, false);
-                try {
-                    arquivo.write(key + ";" + msg + "\n");
-                } catch (IOException e) {
-                    e.printStackTrace();
-                };
+            try {
+                arquivo.write(key + ";" + msg + "\n");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             arquivo.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+    }
+
+    public static void getDadosLivro() {
 
         try {
             BufferedReader reader = new BufferedReader(new FileReader(arqLivro));
             String linha;
 
             while ((linha = reader.readLine()) != null) {
-                StringTokenizer str = new StringTokenizer(linha, ";");
-                String palavra = str.nextToken();
-                String significado = str.nextToken();
-                //dicionario.put(palavra, significado);
+                StringTokenizer str = new StringTokenizer(linha, "\n");
+                String dadosL = str.nextToken();
+                String []dados = dadosL.split(";");
+                String key = dados[0] + "." + dados[1];
+                String message = dados[2] + ";" + dados[3] + ";" + dados[4];
+                checkMatch(message, key);
             }
             reader.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 
-    //HashMap<String, String>
-    public void getDadosLivro(){
-        
+    public static void checkMatch(String message, String key) {
+
+        String[] dadosK = key.split(".");
+        String[] dadosM = message.split(";");
+        Boolean achou = false;
+        for (int i = 0; i < dadosList.size(); i++) {
+            String[] aux = dadosList.get(i).split(";");
+            if (dadosK[0] != aux[0]) {
+                if (dadosK[1] == aux[1]) {
+
+                    if (dadosK[0] == "compra") {
+                        if (Integer.parseInt(dadosM[0]) < Integer.parseInt(aux[2])) {
+                            if (Double.parseDouble(dadosM[1]) >= Double.parseDouble(aux[3])) {
+                                String temp = dadosList.remove(i);
+                                String[] aux2 = temp.split(";");
+                                aux2[2] = Integer.toString(Integer.parseInt(aux2[2]) - Integer.parseInt(dadosM[0]));
+                                temp = aux2[0] + ";" + aux2[1] + ";" + aux2[2] + ";" + aux2[3] + ";" + aux2[4];
+                                dadosList.add(temp);
+                                achou = true;
+                                //chamar metodo do componente transações aqui
+                            }
+                        } else if (Integer.parseInt(dadosM[0]) == Integer.parseInt(aux[2])) {
+                            dadosList.remove(i);
+                            //chamar metodo do componente transações aqui
+                        }
+                    } else {
+                        if (Integer.parseInt(dadosM[0]) > Integer.parseInt(aux[2])) {
+                            if (Double.parseDouble(dadosM[1]) <= Double.parseDouble(aux[3])) {
+                                String temp = dadosList.remove(i);
+                                String[] aux2 = temp.split(";");
+                                dadosM[0] = Integer
+                                        .toString(Integer.parseInt(dadosM[2]) - Integer.parseInt(aux2[0]));
+                                temp = dadosK[0] + ";" + dadosK[1] + ";" + dadosM[0] + ";" + dadosM[1] + ";"
+                                        + dadosM[2];
+                                dadosList.add(temp);
+                                achou = true;
+                                //chamar metodo do componente transações aqui
+                            }
+                        } else if (Integer.parseInt(dadosM[0]) == Integer.parseInt(aux[2])) {
+                            dadosList.remove(i);
+                            //chamar metodo do componente transações aqui
+                        }
+
+                    }
+
+                }
+            }
+        }
+
+        if (achou == false) {
+
+            dadosList.add(key + ";" + dadosM[0] + ";" + dadosM[1] + ";" + dadosM[2]);
+        }
     }
+
+
+
+
 }
