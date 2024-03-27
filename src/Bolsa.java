@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.TimeoutException;
+import java.io.File;
 
 public class Bolsa {
 
@@ -24,7 +25,7 @@ public class Bolsa {
     private static List<String> transacoesList = new ArrayList<String>();
     private static DateTimeFormatter formatador = DateTimeFormatter.ofPattern("dd/MM/yyyy-HH:mm:ss");
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
 
         Thread threadRecv = new Thread(new Runnable() {
             public void run() {
@@ -43,7 +44,16 @@ public class Bolsa {
             }
         });
 
+        Thread threadLivros = new Thread(new Runnable() {
+            public void run() {
+
+                getDadosLivro();
+            }
+        });
+        threadLivros.start();
+        threadLivros.join();
         threadRecv.start();
+
         // threadSend.start();
     }
 
@@ -85,28 +95,54 @@ public class Bolsa {
                 public void run() {
 
                     checkMatch(message, routingKey);
-                    registraLivro(routingKey, message);
+                    try {
+                        registraLivro();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
                 }
             });
-            threadLivro.start();
 
+            // Thread threadEscreve = new Thread(new Runnable() {
+            // public void run() {
+
+            // }
+            // });
+            threadLivro.start();
+            // threadEscreve.start();
         };
         channel.basicConsume(queueName, true, deliverCallback, consumerTag -> {
         });
     }
 
-    public static void registraLivro(String key, String msg) {
-        // n sei se vc n terminou ainda mas isso n funfa n vai ser complicado fazer ele funfar
+    public static void registraLivro() throws IOException {
+        // n sei se vc n terminou ainda mas isso n funfa n vai ser complicado fazer ele
+        // funfar
+
+        FileWriter arquivo = new FileWriter(arqLivro, false);
         try {
-            FileWriter arquivo = new FileWriter(arqLivro, false);
-            try {
-                arquivo.write(key + ";" + msg + "\n");
-            } catch (IOException e) {
-                e.printStackTrace();
+            if (dadosList.size() == 0) {
+                arquivo.write("");
+            }
+            for (int i = 0; i < dadosList.size(); i++) {
+
+                String[] aa = dadosList.get(i).split(";", 2);
+
+                try {
+                    arquivo.write(aa[0] + ";" + aa[1] + "\n");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
             }
             arquivo.close();
         } catch (IOException e) {
             e.printStackTrace();
+        }
+
+        for (int i = 0; i < dadosList.size(); i++) {
+            System.out.println(i + ": " + dadosList.get(i));
         }
 
     }
@@ -121,8 +157,8 @@ public class Bolsa {
                 StringTokenizer str = new StringTokenizer(linha, "\n");
                 String dadosL = str.nextToken();
                 String[] dados = dadosL.split(";");
-                String key = dados[0] + "." + dados[1];
-                String message = dados[2] + ";" + dados[3] + ";" + dados[4];
+                String key = dados[0];
+                String message = dados[1] + ";" + dados[2] + ";" + dados[3];
                 checkMatch(message, key);
             }
             reader.close();
@@ -131,7 +167,7 @@ public class Bolsa {
         }
     }
 
-    public static void checkMatch(String message, String key) {
+    public static synchronized void checkMatch(String message, String key) {
 
         String[] dadosK = key.split("\\.");
         String[] dadosM = message.split(";");
@@ -139,15 +175,15 @@ public class Bolsa {
         for (int i = 0; i < dadosList.size(); i++) {
             String[] aux = dadosList.get(i).split(";");
             if (!dadosK[0].equals(aux[0].split("\\.")[0])) {
-                //System.out.println("0");
+                // System.out.println("0");
                 if (dadosK[1].equals(aux[0].split("\\.")[1])) {
-                    //System.out.println("1");
+                    // System.out.println("1");
                     if (dadosK[0].equals("compra")) {
-                        //System.out.println("2");
+                        // System.out.println("2");
                         if (Integer.parseInt(dadosM[1]) < Integer.parseInt(aux[2])) {
-                            //System.out.println("3");
+                            // System.out.println("3");
                             if (Double.parseDouble(dadosM[2]) >= Double.parseDouble(aux[3])) {
-                                //System.out.println("4");
+                                System.out.println("4");
                                 String temp = dadosList.remove(i);
                                 String[] aux2 = temp.split(";");
                                 aux2[2] = Integer.toString(Integer.parseInt(aux2[2]) - Integer.parseInt(dadosM[1]));
@@ -158,18 +194,18 @@ public class Bolsa {
                                         dadosM[0], aux[1]);
                             }
                         } else if (Integer.parseInt(dadosM[1]) == Integer.parseInt(aux[2])) {
-                            //colocar verificação de preço
-                            //System.out.println("5");
+                            // colocar verificação de preço
+                            // System.out.println("5");
                             dadosList.remove(i);
                             registraTransacao(dadosK[1], Integer.parseInt(dadosM[1]), Double.parseDouble(dadosM[2]),
                                     dadosM[0], aux[1]);
-                                    
+                            achou = true;
                         }
                     } else {
                         if (Integer.parseInt(dadosM[1]) > Integer.parseInt(aux[2])) {
-                            //System.out.println("6");
+                            // System.out.println("6");
                             if (Double.parseDouble(dadosM[2]) <= Double.parseDouble(aux[3])) {
-                                //System.out.println("7");
+                                // System.out.println("7");
                                 String temp = dadosList.remove(i);
                                 String[] aux2 = temp.split(";");
                                 dadosM[1] = Integer
@@ -178,14 +214,15 @@ public class Bolsa {
                                         + dadosM[2];
                                 dadosList.add(temp);
                                 achou = true;
-                         
+
                                 registraTransacao(dadosK[1], Integer.parseInt(aux[2]), Double.parseDouble(dadosM[2]),
                                         aux[1], dadosM[0]);
                             }
                         } else if (Integer.parseInt(dadosM[1]) == Integer.parseInt(aux[2])) {
-                            //colocar verificação de preço
-                            //System.out.println("8");
+                            // colocar verificação de preço
+                            // System.out.println("8");
                             dadosList.remove(i);
+                            achou = true;
                             registraTransacao(dadosK[1], Integer.parseInt(aux[2]), Double.parseDouble(dadosM[2]),
                                     aux[1], dadosM[0]);
                         }
@@ -197,9 +234,12 @@ public class Bolsa {
         }
 
         if (!achou) {
-            //System.out.println("9");
-            //se a quantidade é igual ele passa aqui n sei se quer fazer isso
+            // System.out.println("9");
+            // se a quantidade é igual ele passa aqui n sei se quer fazer isso
             dadosList.add(key + ";" + dadosM[0] + ";" + dadosM[1] + ";" + dadosM[2]);
+        }
+        for (int j = 0; j < dadosList.size(); j++) {
+            System.out.println(dadosList.get(j));
         }
     }
 
