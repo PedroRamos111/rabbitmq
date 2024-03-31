@@ -17,8 +17,8 @@ class Broker implements Runnable{
 
 		t1.start();
 		try {
+			compra("BRK2","ABEV3", 10, 10.0);
 			venda("BRK1","ABEV3", 10, 10);
-			//compra("BRK2","ABEV3", 10, 10.0);
 			
 		} catch (IOException | TimeoutException e) {
 			e.printStackTrace();
