@@ -117,8 +117,6 @@ public class Bolsa {
     }
 
     public static void registraLivro() throws IOException {
-        // n sei se vc n terminou ainda mas isso n funfa n vai ser complicado fazer ele
-        // funfar
 
         FileWriter arquivo = new FileWriter(arqLivro, false);
         try {
@@ -170,61 +168,73 @@ public class Bolsa {
     public static synchronized void checkMatch(String message, String key) {
 
         String[] dadosK = key.split("\\.");
+        String tipo = dadosK[0];
+        String acao = dadosK[1];
         String[] dadosM = message.split(";");
+        String corretora = dadosM[0];
+        String quantidade = dadosM[1];
+        String preco = dadosM[2];
         Boolean achou = false;
         for (int i = 0; i < dadosList.size(); i++) {
             String[] aux = dadosList.get(i).split(";");
-            if (!dadosK[0].equals(aux[0].split("\\.")[0])) {
+            String tipoLista = aux[0].split("\\.")[0];
+            String acaoLista = aux[0].split("\\.")[1];
+            String corretoraLista = aux[1];
+            String quantidadeLista = aux[2];
+            String precoLista = aux[3];
+            if (!tipo.equals(tipoLista)) {
                 // System.out.println("0");
-                if (dadosK[1].equals(aux[0].split("\\.")[1])) {
+                if (acao.equals(acaoLista)) {
                     // System.out.println("1");
-                    if (dadosK[0].equals("compra")) {
+                    if (tipo.equals("compra")) {
                         // System.out.println("2");
-                        if (Integer.parseInt(dadosM[1]) < Integer.parseInt(aux[2])) {
+                        if (Integer.parseInt(quantidade) < Integer.parseInt(quantidadeLista)) { // tem q mudar essa parte, pensar melhor como fazer ela
                             // System.out.println("3");
-                            if (Double.parseDouble(dadosM[2]) >= Double.parseDouble(aux[3])) {
+                            if (Double.parseDouble(preco) >= Double.parseDouble(precoLista)) {
                                 System.out.println("4");
                                 String temp = dadosList.remove(i);
                                 String[] aux2 = temp.split(";");
-                                aux2[2] = Integer.toString(Integer.parseInt(aux2[2]) - Integer.parseInt(dadosM[1]));
+                                aux2[2] = Integer.toString(Integer.parseInt(aux2[2]) - Integer.parseInt(quantidade));
                                 temp = aux2[0] + ";" + aux2[1] + ";" + aux2[2] + ";" + aux2[3];
                                 dadosList.add(temp);
                                 achou = true;
-                                registraTransacao(dadosK[1], Integer.parseInt(dadosM[1]), Double.parseDouble(dadosM[2]),
-                                        dadosM[0], aux[1]);
+                                registraTransacao(acao, Integer.parseInt(quantidade), Double.parseDouble(preco),
+                                        corretora, corretoraLista);
                             }
-                        } else if (Integer.parseInt(dadosM[1]) == Integer.parseInt(aux[2])) {
-                            // colocar verificação de preço
-                            // System.out.println("5");
-                            dadosList.remove(i);
-                            registraTransacao(dadosK[1], Integer.parseInt(dadosM[1]), Double.parseDouble(dadosM[2]),
-                                    dadosM[0], aux[1]);
-                            achou = true;
+                        } else if (Integer.parseInt(quantidade) == Integer.parseInt(quantidadeLista)) {
+                            if (Double.parseDouble(preco) >= Double.parseDouble(precoLista)) {
+                                // System.out.println("5");
+                                dadosList.remove(i);
+                                registraTransacao(acao, Integer.parseInt(quantidade), Double.parseDouble(preco),
+                                        corretora, corretoraLista);
+                                achou = true;
+                            }
                         }
                     } else {
-                        if (Integer.parseInt(dadosM[1]) > Integer.parseInt(aux[2])) {
+                        if (Integer.parseInt(quantidade) > Integer.parseInt(quantidadeLista)) {
                             // System.out.println("6");
-                            if (Double.parseDouble(dadosM[2]) <= Double.parseDouble(aux[3])) {
+                            if (Double.parseDouble(preco) <= Double.parseDouble(precoLista)) {
                                 // System.out.println("7");
                                 String temp = dadosList.remove(i);
                                 String[] aux2 = temp.split(";");
-                                dadosM[1] = Integer
-                                        .toString(Integer.parseInt(dadosM[1]) - Integer.parseInt(aux2[2]));
-                                temp = dadosK[0] + "." + dadosK[1] + ";" + dadosM[0] + ";" + dadosM[1] + ";"
-                                        + dadosM[2];
+                                quantidade = Integer
+                                        .toString(Integer.parseInt(quantidade) - Integer.parseInt(aux2[2]));
+                                temp = tipo + "." + acao + ";" + corretora + ";" + quantidade + ";"
+                                        + preco;
                                 dadosList.add(temp);
                                 achou = true;
 
-                                registraTransacao(dadosK[1], Integer.parseInt(aux[2]), Double.parseDouble(dadosM[2]),
-                                        aux[1], dadosM[0]);
+                                registraTransacao(acao, Integer.parseInt(quantidadeLista), Double.parseDouble(preco),
+                                        corretoraLista, corretora);
                             }
-                        } else if (Integer.parseInt(dadosM[1]) == Integer.parseInt(aux[2])) {
-                            // colocar verificação de preço
-                            // System.out.println("8");
-                            dadosList.remove(i);
-                            achou = true;
-                            registraTransacao(dadosK[1], Integer.parseInt(aux[2]), Double.parseDouble(dadosM[2]),
-                                    aux[1], dadosM[0]);
+                        } else if (Integer.parseInt(quantidade) == Integer.parseInt(quantidadeLista)) {
+                            if (Double.parseDouble(preco) <= Double.parseDouble(precoLista)) {
+                                // System.out.println("8");
+                                dadosList.remove(i);
+                                achou = true;
+                                registraTransacao(acao, Integer.parseInt(quantidadeLista), Double.parseDouble(preco),
+                                        corretoraLista, corretora);
+                            }
                         }
 
                     }
@@ -235,8 +245,7 @@ public class Bolsa {
 
         if (!achou) {
             // System.out.println("9");
-            // se a quantidade é igual ele passa aqui n sei se quer fazer isso
-            dadosList.add(key + ";" + dadosM[0] + ";" + dadosM[1] + ";" + dadosM[2]);
+            dadosList.add(key + ";" + corretora + ";" + quantidade + ";" + preco);
         }
         for (int j = 0; j < dadosList.size(); j++) {
             System.out.println(dadosList.get(j));
