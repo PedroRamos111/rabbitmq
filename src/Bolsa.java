@@ -18,7 +18,7 @@ import java.io.File;
 
 public class Bolsa {
 
-    private static final String EXCHANGE_NAME = "topic_logs";
+    private static final String EXCHANGE_NAME = "BOLSADEVALORES";
     private static final String arqLivro = "POO_Livro.csv";
     private static final String arqTransacoes = "POO_Transacao.csv";
     private static List<String> dadosList = new ArrayList<String>();
@@ -268,10 +268,31 @@ public class Bolsa {
                 e.printStackTrace();
             }
             arquivo.close();
-        } catch (IOException e) {
+            String topico = "transacao" + "." + ativo;
+            String msg = LocalDateTime.now().format(formatador) + ";" + quant + ";" + val + ";"
+            + comprador + ";" + vendedor;
+            enviaMsg(topico, msg);
+        } catch (IOException | TimeoutException e) {
             e.printStackTrace();
-        }
+        }        
 
     }
 
+    public static void enviaMsg(String topic, String message) throws IOException, TimeoutException {
+		ConnectionFactory factory = new ConnectionFactory();
+		factory.setHost("gull.rmq.cloudamqp.com");
+		factory.setUsername("zwzsdwdx");
+		factory.setPassword("dIPnl1KCfla3vDb6FzjDOLh30BP-mrtu");
+		factory.setVirtualHost("zwzsdwdx");
+		Connection connection = factory.newConnection();
+		Channel channel = connection.createChannel();
+
+		channel.exchangeDeclare(EXCHANGE_NAME, BuiltinExchangeType.TOPIC);
+
+		channel.basicPublish(EXCHANGE_NAME, topic, null, message.getBytes("UTF-8"));
+		System.out.println(" [x] Sent '" + topic + "':'" + message + "'");
+
+		channel.close();
+		connection.close();
+	}
 }

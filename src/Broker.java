@@ -11,7 +11,7 @@ import java.nio.charset.StandardCharsets;
 
 class Broker implements Runnable {
 
-	private static final String EXCHANGE_NAME = "topic_logs";
+	private static final String EXCHANGE_NAME = "BROKER";
 	private static Scanner entrada = new Scanner(System.in);
 
 	public static void main(String[] args) throws IOException, TimeoutException {
