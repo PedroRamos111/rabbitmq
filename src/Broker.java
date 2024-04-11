@@ -21,29 +21,29 @@ class Broker implements Runnable {
 		String corretora = entrada.nextLine();
 		List<String> ativos = new ArrayList<>();
 		Thread threadRecv = new Thread(new Runnable() {
-            public void run() {
+			public void run() {
 
-                try {
-                    recebeMsg(ativos);
-                } catch (IOException | TimeoutException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
+				try {
+					recebeMsg(ativos);
+				} catch (IOException | TimeoutException e) {
+					e.printStackTrace();
+				}
+			}
+		});
 		Thread threadMenu = new Thread(new Runnable() {
-            public void run() {
+			public void run() {
 
-                try {
-                    menu(corretora);
-                } catch (IOException | TimeoutException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-		
+				try {
+					menu(corretora);
+				} catch (IOException | TimeoutException e) {
+					e.printStackTrace();
+				}
+			}
+		});
+
 		threadRecv.start();
 		threadMenu.start();
-	
+
 	}
 
 	public static void menu(String corretora) throws IOException, TimeoutException {
@@ -78,8 +78,8 @@ class Broker implements Runnable {
 					venda(corretora, acao, op, op);
 					break;
 				case 0:
-				entrada.nextLine();
-				main(null);
+					entrada.nextLine();
+					main(null);
 					break;
 				default:
 					entrada.nextLine();
@@ -130,37 +130,36 @@ class Broker implements Runnable {
 	}
 
 	public static void recebeMsg(List<String> ativos) throws IOException, TimeoutException {
-		
-        ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost("gull.rmq.cloudamqp.com");
-        factory.setUsername("zwzsdwdx");
-        factory.setPassword("dIPnl1KCfla3vDb6FzjDOLh30BP-mrtu");
-        factory.setVirtualHost("zwzsdwdx");
-        Connection connection = factory.newConnection();
-        Channel channel = connection.createChannel();
 
-        channel.exchangeDeclare(EXCHANGE_NAME, BuiltinExchangeType.TOPIC);
-        String queueName = channel.queueDeclare().getQueue();
+		ConnectionFactory factory = new ConnectionFactory();
+		factory.setHost("gull.rmq.cloudamqp.com");
+		factory.setUsername("zwzsdwdx");
+		factory.setPassword("dIPnl1KCfla3vDb6FzjDOLh30BP-mrtu");
+		factory.setVirtualHost("zwzsdwdx");
+		Connection connection = factory.newConnection();
+		Channel channel = connection.createChannel();
 
-        
+		channel.exchangeDeclare(EXCHANGE_NAME, BuiltinExchangeType.TOPIC);
+		String queueName = channel.queueDeclare().getQueue();
+
 		for (int i = 0; i < ativos.size(); i++) {
 			channel.queueBind(queueName, EXCHANGE_NAME, "#." + ativos.get(i));
 		}
 
-        System.out.println(" [*] Waiting for messages. To exit press CTRL+C");
+		System.out.println(" [*] Waiting for messages. To exit press CTRL+C");
 
-        DeliverCallback deliverCallback = (consumerTag, delivery) -> {
+		DeliverCallback deliverCallback = (consumerTag, delivery) -> {
 
-            String message = new String(delivery.getBody(), "UTF-8");
-            String routingKey = delivery.getEnvelope().getRoutingKey();
+			String message = new String(delivery.getBody(), "UTF-8");
+			String routingKey = delivery.getEnvelope().getRoutingKey();
 
-            System.out.println(" [x] Received '" + delivery.getEnvelope().getRoutingKey() + "':'" + message + "'");
-            System.out.println(routingKey);
-            System.out.println(message);
+			System.out.println(" [x] Received '" + delivery.getEnvelope().getRoutingKey() + "':'" + message + "'");
+			System.out.println(routingKey);
+			System.out.println(message);
 
-        };
-        channel.basicConsume(queueName, true, deliverCallback, consumerTag -> {
-        });
+		};
+		channel.basicConsume(queueName, true, deliverCallback, consumerTag -> {
+		});
 	}
 
 }
