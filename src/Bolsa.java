@@ -91,6 +91,12 @@ public class Bolsa {
             System.out.println(" [x] Received '" + delivery.getEnvelope().getRoutingKey() + "':'" + message + "'");
             System.out.println(routingKey);
             System.out.println(message);
+            try {
+                enviaMsg(routingKey, message);
+            } catch (TimeoutException e) {
+
+                e.printStackTrace();
+            }
             Thread threadLivro = new Thread(new Runnable() {
                 public void run() {
 
@@ -165,7 +171,7 @@ public class Bolsa {
         }
     }
 
-        public static synchronized void checkMatch(String message, String key) {
+    public static synchronized void checkMatch(String message, String key) {
 
         String[] dadosK = key.split("\\.");
         String tipo = dadosK[0];
@@ -257,7 +263,8 @@ public class Bolsa {
         }
     }
 
-    private static void registraTransacao(String ativo, int quant, double val, String comprador, String vendedor) {
+    private static synchronized void registraTransacao(String ativo, int quant, double val, String comprador,
+            String vendedor) {
         try {
             FileWriter arquivo = new FileWriter(arqTransacoes, true);
             try {
@@ -270,29 +277,29 @@ public class Bolsa {
             arquivo.close();
             String topico = "transacao" + "." + ativo;
             String msg = LocalDateTime.now().format(formatador) + ";" + quant + ";" + val + ";"
-            + comprador + ";" + vendedor;
+                    + comprador + ";" + vendedor;
             enviaMsg(topico, msg);
         } catch (IOException | TimeoutException e) {
             e.printStackTrace();
-        }        
+        }
 
     }
 
     public static void enviaMsg(String topic, String message) throws IOException, TimeoutException {
-		ConnectionFactory factory = new ConnectionFactory();
-		factory.setHost("gull.rmq.cloudamqp.com");
-		factory.setUsername("zwzsdwdx");
-		factory.setPassword("dIPnl1KCfla3vDb6FzjDOLh30BP-mrtu");
-		factory.setVirtualHost("zwzsdwdx");
-		Connection connection = factory.newConnection();
-		Channel channel = connection.createChannel();
+        ConnectionFactory factory = new ConnectionFactory();
+        factory.setHost("gull.rmq.cloudamqp.com");
+        factory.setUsername("zwzsdwdx");
+        factory.setPassword("dIPnl1KCfla3vDb6FzjDOLh30BP-mrtu");
+        factory.setVirtualHost("zwzsdwdx");
+        Connection connection = factory.newConnection();
+        Channel channel = connection.createChannel();
 
-		channel.exchangeDeclare(EXCHANGE_NAME, BuiltinExchangeType.TOPIC);
+        channel.exchangeDeclare(EXCHANGE_NAME, BuiltinExchangeType.TOPIC);
 
-		channel.basicPublish(EXCHANGE_NAME, topic, null, message.getBytes("UTF-8"));
-		System.out.println(" [x] Sent '" + topic + "':'" + message + "'");
+        channel.basicPublish(EXCHANGE_NAME, topic, null, message.getBytes("UTF-8"));
+        System.out.println(" [x] Sent '" + topic + "':'" + message + "'");
 
-		channel.close();
-		connection.close();
-	}
+        channel.close();
+        connection.close();
+    }
 }

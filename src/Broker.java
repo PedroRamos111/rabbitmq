@@ -1,4 +1,6 @@
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.TimeoutException;
 
@@ -17,7 +19,30 @@ class Broker implements Runnable {
 	public static void main(String[] args) throws IOException, TimeoutException {
 		System.out.println("Qual o nome da sua corretora?");
 		String corretora = entrada.nextLine();
-		menu(corretora);
+		List<String> ativos = new ArrayList<>();
+		Thread threadRecv = new Thread(new Runnable() {
+            public void run() {
+
+                try {
+                    recebeMsg(ativos);
+                } catch (IOException | TimeoutException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+		Thread threadMenu = new Thread(new Runnable() {
+            public void run() {
+
+                try {
+                    menu(corretora);
+                } catch (IOException | TimeoutException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+		
+		threadRecv.start();
+		threadMenu.start();
 	
 	}
 
@@ -102,6 +127,40 @@ class Broker implements Runnable {
 
 		channel.close();
 		connection.close();
+	}
+
+	public static void recebeMsg(List<String> ativos) throws IOException, TimeoutException {
+		
+        ConnectionFactory factory = new ConnectionFactory();
+        factory.setHost("gull.rmq.cloudamqp.com");
+        factory.setUsername("zwzsdwdx");
+        factory.setPassword("dIPnl1KCfla3vDb6FzjDOLh30BP-mrtu");
+        factory.setVirtualHost("zwzsdwdx");
+        Connection connection = factory.newConnection();
+        Channel channel = connection.createChannel();
+
+        channel.exchangeDeclare(EXCHANGE_NAME, BuiltinExchangeType.TOPIC);
+        String queueName = channel.queueDeclare().getQueue();
+
+        
+		for (int i = 0; i < ativos.size(); i++) {
+			channel.queueBind(queueName, EXCHANGE_NAME, "#." + ativos.get(i));
+		}
+
+        System.out.println(" [*] Waiting for messages. To exit press CTRL+C");
+
+        DeliverCallback deliverCallback = (consumerTag, delivery) -> {
+
+            String message = new String(delivery.getBody(), "UTF-8");
+            String routingKey = delivery.getEnvelope().getRoutingKey();
+
+            System.out.println(" [x] Received '" + delivery.getEnvelope().getRoutingKey() + "':'" + message + "'");
+            System.out.println(routingKey);
+            System.out.println(message);
+
+        };
+        channel.basicConsume(queueName, true, deliverCallback, consumerTag -> {
+        });
 	}
 
 }
