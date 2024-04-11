@@ -13,13 +13,14 @@ import java.nio.charset.StandardCharsets;
 
 class Broker implements Runnable {
 
-	private static final String EXCHANGE_NAME = "BROKER";
+	private static final String EXCHANGE_NAME = "topic_logs";
 	private static Scanner entrada = new Scanner(System.in);
 
 	public static void main(String[] args) throws IOException, TimeoutException {
 		System.out.println("Qual o nome da sua corretora?");
 		String corretora = entrada.nextLine();
 		List<String> ativos = new ArrayList<>();
+		menuAtivos(ativos);
 		Thread threadRecv = new Thread(new Runnable() {
 			public void run() {
 
@@ -44,6 +45,35 @@ class Broker implements Runnable {
 		threadRecv.start();
 		threadMenu.start();
 
+	}
+
+	private static void menuAtivos(List<String> ativos) {
+		String mais = "";
+		int op;
+		do {
+			System.out.println("Você quer acompanhar "+ mais +" alguma ação?");
+			System.out.println("1 - Sim.");
+			System.out.println("2 - Não.");
+
+			op = entrada.nextInt();
+			switch (op) {
+				case 1:
+					entrada.nextLine();
+					mais = "mais";
+					System.out.println("Qual açao você quer acompanhar?(Sigla)");
+					String acao = entrada.nextLine();
+					ativos.add(acao);
+					break;
+				case 2:
+					entrada.nextLine();
+					break;
+
+				default:
+					entrada.nextLine();
+					System.out.println("Esse não é um valor valido");
+					break;
+			}
+		} while (op != 2);
 	}
 
 	public static void menu(String corretora) throws IOException, TimeoutException {
@@ -75,11 +105,10 @@ class Broker implements Runnable {
 					quant = entrada.nextInt();
 					System.out.println("Qual valor você pretende vender este ativo por?");
 					valor = entrada.nextDouble();
-					venda(corretora, acao, op, op);
+					venda(corretora, acao, quant, valor);
 					break;
 				case 0:
 					entrada.nextLine();
-					main(null);
 					break;
 				default:
 					entrada.nextLine();
@@ -100,14 +129,14 @@ class Broker implements Runnable {
 	public static void compra(String corretora, String ativo, int quant, double val)
 			throws IOException, TimeoutException {
 		String topic = "compra." + ativo;
-		String message = corretora + ";" + quant + ";" + val;
+		String message = quant + ";" + val + ";" + corretora;
 		enviaPedido(topic, message);
 	}
 
 	public static void venda(String corretora, String ativo, int quant, double val)
 			throws IOException, TimeoutException {
 		String topic = "venda." + ativo;
-		String message = corretora + ";" + quant + ";" + val;
+		String message = quant + ";" + val + ";" + corretora;
 		enviaPedido(topic, message);
 	}
 
@@ -145,8 +174,6 @@ class Broker implements Runnable {
 		for (int i = 0; i < ativos.size(); i++) {
 			channel.queueBind(queueName, EXCHANGE_NAME, "#." + ativos.get(i));
 		}
-
-		System.out.println(" [*] Waiting for messages. To exit press CTRL+C");
 
 		DeliverCallback deliverCallback = (consumerTag, delivery) -> {
 
