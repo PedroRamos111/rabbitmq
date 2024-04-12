@@ -100,8 +100,8 @@ public class Bolsa {
             Thread threadLivro = new Thread(new Runnable() {
                 public void run() {
 
-                    checkMatch(message, routingKey);
                     try {
+                        checkMatch(message, routingKey);
                         registraLivro();
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -171,7 +171,7 @@ public class Bolsa {
         }
     }
 
-    public static synchronized void checkMatch(String message, String key) {
+    public static synchronized void checkMatch(String message, String key) throws IOException {
 
         String[] dadosK = key.split("\\.");
         String tipo = dadosK[0];
@@ -253,14 +253,14 @@ public class Bolsa {
             }
         }
 
-        if (!achou)
-
-        {
+        if (!achou) {
             dadosList.add(key + ";" + quantidade + ";" + preco + ";" + corretora);
         }
         for (int j = 0; j < dadosList.size(); j++) {
             System.out.println(dadosList.get(j));
         }
+
+        registraLivro();
     }
 
     private static synchronized void registraTransacao(String ativo, int quant, double val, String comprador,
