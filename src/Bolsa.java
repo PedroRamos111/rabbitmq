@@ -177,42 +177,46 @@ public class Bolsa {
         String tipo = dadosK[0];
         String acao = dadosK[1];
         String[] dadosM = message.split(";");
-        String corretora = dadosM[2];
         String quantidade = dadosM[0];
         String preco = dadosM[1];
+        String corretora = dadosM[2];
         Boolean achou = false;
-        for (int i = 0; i < dadosList.size(); i++) { // erro
+        Boolean quantIgual = false;
+        int quantRemovida = 0;
+        List<String> auxList = new ArrayList<String>(dadosList);
+        for (int i = 0; i < dadosList.size(); i++) {
             String[] aux = dadosList.get(i).split(";");
             String tipoLista = aux[0].split("\\.")[0];
             String acaoLista = aux[0].split("\\.")[1];
-            String corretoraLista = aux[3];
             String quantidadeLista = aux[1];
             String precoLista = aux[2];
+            String corretoraLista = aux[3];
             if (!tipo.equals(tipoLista)) {
                 if (acao.equals(acaoLista)) {
                     if (tipo.equals("compra")) {
                         if (Double.parseDouble(preco) >= Double.parseDouble(precoLista)) {
                             if (Integer.parseInt(quantidade) == Integer.parseInt(quantidadeLista)) {
-                                dadosList.remove(i);
+                                auxList.remove(i - quantRemovida);
+                                quantRemovida = +1;
                                 registraTransacao(acao, Integer.parseInt(quantidade), Double.parseDouble(preco),
                                         corretora, corretoraLista);
                                 achou = true;
+                                quantIgual = true;
                             } else {
                                 int quantTransferida = 0;
                                 int quantRestante = 0;
-                                String temp = dadosList.remove(i);
+                                String temp = auxList.remove(i - quantRemovida);
+                                quantRemovida = +1;
                                 String[] aux2 = temp.split(";");
                                 if (Integer.parseInt(quantidade) < Integer.parseInt(quantidadeLista)) {
                                     quantRestante = Integer.parseInt(aux2[1]) - Integer.parseInt(quantidade);
                                     tipo = tipoLista;
                                     quantTransferida = Integer.parseInt(quantidadeLista) - quantRestante;
                                 } else {
-                                    quantRestante = Integer.parseInt(quantidade) - Integer.parseInt(aux2[2]);
+                                    quantRestante = Integer.parseInt(quantidade) - Integer.parseInt(aux2[1]);
                                     quantTransferida = Integer.parseInt(quantidade) - quantRestante;
                                 }
-                                temp = tipo + "." + acao + ";" + quantRestante + ";"
-                                        + preco + ";" + corretora;
-                                dadosList.add(temp);
+                                quantidade = String.valueOf(quantRestante);
                                 achou = true;
                                 registraTransacao(acao, quantTransferida, Double.parseDouble(preco),
                                         corretora, corretoraLista);
@@ -222,26 +226,27 @@ public class Bolsa {
                     } else {
                         if (Double.parseDouble(preco) <= Double.parseDouble(precoLista)) {
                             if (Integer.parseInt(quantidade) == Integer.parseInt(quantidadeLista)) {
-                                dadosList.remove(i);
+                                auxList.remove(i - quantRemovida);
+                                quantRemovida = +1;
                                 achou = true;
+                                quantIgual = true;
                                 registraTransacao(acao, Integer.parseInt(quantidade), Double.parseDouble(preco),
                                         corretoraLista, corretora);
                             } else {
                                 int quantTransferida = 0;
                                 int quantRestante = 0;
-                                String temp = dadosList.remove(i);
+                                String temp = auxList.remove(i - quantRemovida);
+                                quantRemovida += 1;
                                 String[] aux2 = temp.split(";");
                                 if (Integer.parseInt(quantidade) > Integer.parseInt(quantidadeLista)) {
-                                    quantRestante = Integer.parseInt(quantidade) - Integer.parseInt(aux2[2]);
+                                    quantRestante = Integer.parseInt(quantidade) - Integer.parseInt(aux2[1]);
                                     quantTransferida = Integer.parseInt(quantidade) - quantRestante;
                                 } else {
                                     quantRestante = Integer.parseInt(aux2[1]) - Integer.parseInt(quantidade);
                                     tipo = tipoLista;
                                     quantTransferida = Integer.parseInt(quantidadeLista) - quantRestante;
                                 }
-                                temp = tipo + "." + acao + ";" + quantRestante + ";"
-                                        + preco + ";" + corretora;
-                                dadosList.add(temp);
+                                quantidade = String.valueOf(quantRestante);
                                 achou = true;
 
                                 registraTransacao(acao, quantTransferida, Double.parseDouble(precoLista),
@@ -255,6 +260,15 @@ public class Bolsa {
 
         if (!achou) {
             dadosList.add(key + ";" + quantidade + ";" + preco + ";" + corretora);
+        } else if (!quantIgual) {
+            String temp = tipo + "." + acao + ";" + quantidade + ";"
+                    + preco + ";" + corretora;
+            auxList.add(temp);
+            dadosList.clear();
+            dadosList.addAll(auxList);
+        } else {
+            dadosList.clear();
+            dadosList.addAll(auxList);
         }
         for (int j = 0; j < dadosList.size(); j++) {
             System.out.println(dadosList.get(j));
