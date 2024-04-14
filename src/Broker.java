@@ -25,7 +25,7 @@ class Broker implements Runnable {
 			public void run() {
 
 				try {
-					recebeMsg(ativos);
+					recebeMsg(ativos, "BOLSA");
 				} catch (IOException | TimeoutException e) {
 					e.printStackTrace();
 				}
@@ -51,7 +51,7 @@ class Broker implements Runnable {
 		String mais = "";
 		int op;
 		do {
-			System.out.println("Você quer acompanhar "+ mais +" alguma ação?");
+			System.out.println("Você quer acompanhar " + mais + " alguma ação?");
 			System.out.println("1 - Sim.");
 			System.out.println("2 - Não.");
 
@@ -158,7 +158,7 @@ class Broker implements Runnable {
 		connection.close();
 	}
 
-	public static void recebeMsg(List<String> ativos) throws IOException, TimeoutException {
+	public static void recebeMsg(List<String> ativos, String name) throws IOException, TimeoutException {
 
 		ConnectionFactory factory = new ConnectionFactory();
 		factory.setHost("gull.rmq.cloudamqp.com");
@@ -168,25 +168,39 @@ class Broker implements Runnable {
 		Connection connection = factory.newConnection();
 		Channel channel = connection.createChannel();
 
-		channel.exchangeDeclare(EXCHANGE_NAME, BuiltinExchangeType.TOPIC);
+		channel.exchangeDeclare(name, BuiltinExchangeType.TOPIC);
 		String queueName = channel.queueDeclare().getQueue();
 
 		for (int i = 0; i < ativos.size(); i++) {
-			channel.queueBind(queueName, EXCHANGE_NAME, "#." + ativos.get(i));
+			channel.queueBind(queueName, name, "#." + ativos.get(i));
 		}
 
 		DeliverCallback deliverCallback = (consumerTag, delivery) -> {
 
 			String message = new String(delivery.getBody(), "UTF-8");
 			String routingKey = delivery.getEnvelope().getRoutingKey();
+			String[] dadosK = routingKey.split("\\.");
+			String tipo = dadosK[0];
+			String acao = dadosK[1];
+			String[] dadosM = message.split(";");
+			String quantidade = dadosM[0];
+			String preco = dadosM[1];
+			String corretora = dadosM[2];
+			System.out.println(formatMsg(tipo, acao, quantidade, preco, corretora));
+			
 
-			System.out.println(" [x] Received '" + delivery.getEnvelope().getRoutingKey() + "':'" + message + "'");
-			System.out.println(routingKey);
-			System.out.println(message);
 
 		};
 		channel.basicConsume(queueName, true, deliverCallback, consumerTag -> {
 		});
+
+		
 	}
 
+
+	public static String formatMsg(String tipo, String acao, String quantidade, String preco, String corretora){
+
+		return "Novos pedidos sobre a ação " + acao + ":\nTipo: " + tipo + "\nQuantidade: " + quantidade + "\nPreço: " + preco + "\nBroker responsavel: " + corretora;
+
+	}
 }

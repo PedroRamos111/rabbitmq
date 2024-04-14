@@ -91,12 +91,12 @@ public class Bolsa {
             System.out.println(" [x] Received '" + delivery.getEnvelope().getRoutingKey() + "':'" + message + "'");
             System.out.println(routingKey);
             System.out.println(message);
-            // try {
-            // enviaMsg(routingKey, message);
-            // } catch (TimeoutException e) {
+            try {
+                enviaMsg(routingKey, message, "BOLSA");
+            } catch (TimeoutException e) {
 
-            // e.printStackTrace();
-            // }
+                e.printStackTrace();
+            }
             Thread threadLivro = new Thread(new Runnable() {
                 public void run() {
 
@@ -292,14 +292,14 @@ public class Bolsa {
             String topico = "transacao" + "." + ativo;
             String msg = LocalDateTime.now().format(formatador) + ";" + quant + ";" + val + ";"
                     + comprador + ";" + vendedor;
-            enviaMsg(topico, msg);
+            enviaMsg(topico, msg, "BOLSA");
         } catch (IOException | TimeoutException e) {
             e.printStackTrace();
         }
 
     }
 
-    public static void enviaMsg(String topic, String message) throws IOException, TimeoutException {
+    public static void enviaMsg(String topic, String message, String name) throws IOException, TimeoutException {
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost("gull.rmq.cloudamqp.com");
         factory.setUsername("zwzsdwdx");
@@ -308,9 +308,9 @@ public class Bolsa {
         Connection connection = factory.newConnection();
         Channel channel = connection.createChannel();
 
-        channel.exchangeDeclare(EXCHANGE_NAME, BuiltinExchangeType.TOPIC);
+        channel.exchangeDeclare(name, BuiltinExchangeType.TOPIC);
 
-        channel.basicPublish(EXCHANGE_NAME, topic, null, message.getBytes("UTF-8"));
+        channel.basicPublish(name, topic, null, message.getBytes("UTF-8"));
         System.out.println(" [x] Sent '" + topic + "':'" + message + "'");
 
         channel.close();
