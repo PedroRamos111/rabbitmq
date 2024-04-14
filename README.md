@@ -1,8 +1,8 @@
 Dupla: 
 
-Giovanni Duarte;
+- Giovanni Duarte;
 
-Pedro Ramos Vidgal.
+- Pedro Ramos Vidgal.
 
 
 
