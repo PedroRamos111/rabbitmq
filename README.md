@@ -7,6 +7,7 @@ Instruções para a compilação:
 2. Abrir um novo terminal e executar o arquivo Broker.java
 
 Explicação do código:
+
 O código é feito em java, contendo 2 classes, Bolsa e Broker. 
 
 O Broker está encarregado de enviar e receber mensagens da bolsa, enviando uma mensagem de pedidos de compra e venda, e recebendo atualizações sobre as ações escolhidas. O código do broker implementa a interface Runnable para enviar e receber as mensagens em threads e contem um método para ver qual ação será recebida as mensagens e um método para escolher o conteúdo das mensagens à ser enviada. 
