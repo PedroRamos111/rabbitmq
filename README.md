@@ -1,6 +1,9 @@
 Dupla: 
-Giovanni Duarte
-Pedro Ramos Vidgal
+
+Giovanni Duarte;
+
+Pedro Ramos Vidgal.
+
 
 Instruções para a compilação:
 1. Executar o arquivo Bolsa.java
