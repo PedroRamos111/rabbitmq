@@ -1,7 +1,6 @@
 Dupla: 
 
 - Giovanni Duarte;
-
 - Pedro Ramos Vidgal.
 
 
