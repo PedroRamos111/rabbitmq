@@ -187,20 +187,17 @@ class Broker implements Runnable {
 			String preco = dadosM[1];
 			String corretora = dadosM[2];
 			System.out.println(formatMsg(tipo, acao, quantidade, preco, corretora));
-			
-
 
 		};
 		channel.basicConsume(queueName, true, deliverCallback, consumerTag -> {
 		});
 
-		
 	}
 
+	public static String formatMsg(String tipo, String acao, String quantidade, String preco, String corretora) {
 
-	public static String formatMsg(String tipo, String acao, String quantidade, String preco, String corretora){
-
-		return "Novos pedidos sobre a ação " + acao + ":\nTipo: " + tipo + "\nQuantidade: " + quantidade + "\nPreço: " + preco + "\nBroker responsavel: " + corretora;
+		return "Novos pedidos sobre a ação " + acao + ":\nTipo: " + tipo + "\nQuantidade: " + quantidade + "\nPreço: "
+				+ preco + "\nBroker responsavel: " + corretora;
 
 	}
 }
