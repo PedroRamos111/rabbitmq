@@ -5,6 +5,8 @@ Giovanni Duarte;
 Pedro Ramos Vidgal.
 
 
+
+
 Instruções para a compilação:
 1. Executar o arquivo Bolsa.java
 2. Abrir um novo terminal e executar o arquivo Broker.java
